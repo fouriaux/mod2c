@@ -83,8 +83,8 @@ extern int yyparse();
 static void openfiles(char* input_filename, char* output_dir) {
   char  s[NRN_BUFSIZE];
   modprefix = strdup (input_filename);                // we want to keep original string to open input file
-  char* first_ext_char = strchr(modprefix, '.');      // find last '.' that delimit file name from extension
-  *first_ext_char = '\0';                             // effectively cut the extension from prefix
+  char* first_ext_char = strrchr(modprefix, '.');     // find last '.' that delimit file name from extension
+  if(first_ext_char) *first_ext_char = '\0';          // effectively cut the extension from prefix
   if ((fin = fopen(input_filename, "r")) == (FILE *) 0) {
     Sprintf(finname, "%s.mod", modprefix);
       diag("Can't open input file: ", input_filename);
@@ -134,8 +134,7 @@ int main(int argc, char** argv) {
     }
   }
   if ((argc - optind) > 1) {
-    fprintf(stderr, "%s: several input files specified on command line but only one is accepted\n", argv[0]);
-    exit(-1);
+    fprintf(stderr, "%s: Warning several input files specified on command line but only one will be processed\n", argv[0]);
   }
 
   init(); /* keywords into symbol table, initialize lists, etc. */
@@ -162,6 +161,7 @@ int main(int argc, char** argv) {
  */
   consistency();
   chk_thread_safe();
+  parout();
   c_out();   /* print .c file */
 
   IGNORE(fclose(fcout));

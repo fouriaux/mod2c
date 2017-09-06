@@ -89,7 +89,11 @@ static void openfiles(char* input_filename, char* output_dir) {
     Sprintf(finname, "%s.mod", modprefix);
       diag("Can't open input file: ", input_filename);
   }
-  Sprintf(s, "%s/%s.c", output_dir, modprefix);
+  if (output_dir[0] != '\0')
+    Sprintf(s, "%s/%s.c", output_dir, modprefix);
+  else
+    Sprintf(s, "%s.c", modprefix);
+
   if ((fcout = fopen(s, "w")) == (FILE *) 0) {
   diag("Can't create C file: ", s);
   }

@@ -55,13 +55,15 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "modl.h"
 FILE* fin;      /* input file descriptor for  filename.mod */
 FILE* fcout;    /* output file descriptor for filename.c */
+char* finname;
+char* modprefix;
 
-static struct options long_options[] = {
+static struct option long_options[] = {
   {"version", no_argument, 0, 'v'},
   {"help", no_argument, 0, 'h'},
   {"outdir", required_argument, 0, 'o'},
   {0,0,0,0}
-  };
+};
 
 #if LINT
 char*        clint;
@@ -77,7 +79,22 @@ extern int   usederivstatearray;
 #endif
 
 extern int yyparse();
-static void  openfiles();
+
+static void openfiles(char* input_filename, char* output_dir) {
+  char  s[NRN_BUFSIZE];
+  modprefix = strdup (input_filename);                // we want to keep original string to open input file
+  char* first_ext_char = strchr(modprefix, '.');      // find last '.' that delimit file name from extension
+  *first_ext_char = '\0';                             // effectively cut the extension from prefix
+  if ((fin = fopen(input_filename, "r")) == (FILE *) 0) {
+    Sprintf(finname, "%s.mod", modprefix);
+      diag("Can't open input file: ", input_filename);
+  }
+  Sprintf(s, "%s/%s.c", output_dir, modprefix);
+  if ((fcout = fopen(s, "w")) == (FILE *) 0) {
+  diag("Can't create C file: ", s);
+  }
+  Fprintf(stderr, "Translating %s into %s.c\n", input_filename, s);
+}
 
 int main(int argc, char** argv) {
   int option        = -1;
@@ -117,10 +134,9 @@ int main(int argc, char** argv) {
     exit(-1);
   }
 
-  modprefix = prefix_;
   init(); /* keywords into symbol table, initialize lists, etc. */
-  openfiles(argv[optind], output_dir); /* .mrg else .mod,  .var, .c */
-  Fprintf(stderr, "Translating %s into %s.c\n", finname, modprefix);
+  finname = argv[optind];
+  openfiles(finname, output_dir); /* .mrg else .mod,  .var, .c */
   IGNORE(yyparse());
 /*
  * At this point all blocks are fully processed except the kinetic
@@ -142,7 +158,7 @@ int main(int argc, char** argv) {
  */
   consistency();
   chk_thread_safe();
-  c_out(modprefix);   /* print .c file */
+  c_out();   /* print .c file */
 
   IGNORE(fclose(fcout));
 
@@ -152,7 +168,7 @@ int main(int argc, char** argv) {
   }
   if (usederivstatearray) {
     fprintf(stderr, "Derivatives of STATE array variables are not translated correctly and compile time errors will be generated.\n");
-    fprintf(stderr, "The %s.c file may be manually edited to fix these errors.\n", modprefix);
+    fprintf(stderr, " %s.c file may be manually edited to fix these errors.\n", modprefix);
   }
 #endif
 
@@ -169,19 +185,4 @@ int main(int argc, char** argv) {
 }
 #endif
   return 0;
-}
-
-static void openfiles(char* finname, char* output_dir) {
-  char  s[NRN_BUFSIZE];
-  char* modprefix = strndup (inputfile, prefix_size);    // we want to keep original string to open input file
-  char* first_ext_char = strchr(input_prefix, '.');      // find last '.' that delimit file name from extension
-  *first_ext_char = '\0';                                // effectively cut the extension from prefix
-  if ((fin = fopen(finname, "r")) == (FILE *) 0) {
-    Sprintf(finname, "%s.mod", modprefix);
-      diag("Can't open input file: ", finname);
-  }
-  Sprintf(s, "%s/%s.c", output_dir, modprefix);
-  if ((fcout = fopen(s, "w")) == (FILE *) 0) {
-  diag("Can't create C file: ", s);
-  }
 }

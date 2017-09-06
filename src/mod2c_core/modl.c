@@ -80,24 +80,28 @@ extern int   usederivstatearray;
 
 extern int yyparse();
 
-static void openfiles(char* input_filename, char* output_dir) {
-  char  s[NRN_BUFSIZE];
-  modprefix = strdup (input_filename);                // we want to keep original string to open input file
-  char* first_ext_char = strrchr(modprefix, '.');     // find last '.' that delimit file name from extension
-  if(first_ext_char) *first_ext_char = '\0';          // effectively cut the extension from prefix
-  if ((fin = fopen(input_filename, "r")) == (FILE *) 0) {
-    Sprintf(finname, "%s.mod", modprefix);
+static void openfiles(char* given_filename, char* output_dir) {
+  char  output_filename [NRN_BUFSIZE];
+  char  input_filename  [NRN_BUFSIZE];
+  modprefix = strdup (given_filename);                      // we want to keep original string to open input file
+  char* first_ext_char = strrchr(modprefix, '.');           // find last '.' that delimit file name from extension
+
+  if(first_ext_char) *first_ext_char = '\0';                // effectively cut the extension from prefix if it exist in given_filename
+  if ((fin = fopen(given_filename, "r")) == (FILE *) 0) {   // first try to open given_filename
+    Sprintf(input_filename, "%s.mod", given_filename);      // if it dont work try to add ".mod" extension and retry
+    if ((fin = fopen(input_filename, "r")) == (FILE *) 0) {
       diag("Can't open input file: ", input_filename);
+    }
   }
   if (output_dir[0] != '\0')
-    Sprintf(s, "%s/%s.c", output_dir, modprefix);
+    Sprintf(output_filename, "%s/%s.c", output_dir, modprefix);
   else
-    Sprintf(s, "%s.c", modprefix);
+    Sprintf(output_filename, "%s.c", modprefix);
 
-  if ((fcout = fopen(s, "w")) == (FILE *) 0) {
-  diag("Can't create C file: ", s);
+  if ((fcout = fopen(output_filename, "w")) == (FILE *) 0) {
+  diag("Can't create C file: ", output_filename);
   }
-  Fprintf(stderr, "Translating %s into %s.c\n", input_filename, s);
+  Fprintf(stderr, "Translating %s into %s\n", input_filename, output_filename);
 }
 
 int main(int argc, char** argv) {

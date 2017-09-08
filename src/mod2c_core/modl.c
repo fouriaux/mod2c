@@ -93,8 +93,10 @@ static void openfiles(char* given_filename, char* output_dir) {
       diag("Can't open input file: ", input_filename);
     }
   }
-  if (output_dir[0] != '\0')
-    Sprintf(output_filename, "%s/%s.c", output_dir, modprefix);
+  if (output_dir[0] != '\0') {
+      char* basename = strrchr(modprefix,'/');
+      Sprintf(output_filename, "%s/%s.c", output_dir, basename);
+  }
   else
     Sprintf(output_filename, "%s.c", modprefix);
 

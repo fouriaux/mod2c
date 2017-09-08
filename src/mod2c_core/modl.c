@@ -89,6 +89,7 @@ static void openfiles(char* given_filename, char* output_dir) {
   if(first_ext_char) *first_ext_char = '\0';                // effectively cut the extension from prefix if it exist in given_filename
   if ((fin = fopen(given_filename, "r")) == (FILE *) 0) {   // first try to open given_filename
     Sprintf(input_filename, "%s.mod", given_filename);      // if it dont work try to add ".mod" extension and retry
+    Sprintf(finname, "%s.mod", given_filename);             // finname is still a global variable, so we need to update it
     if ((fin = fopen(input_filename, "r")) == (FILE *) 0) {
       diag("Can't open input file: ", input_filename);
     }

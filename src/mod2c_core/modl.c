@@ -79,6 +79,7 @@ extern int   usederivstatearray;
 #endif
 
 extern int yyparse();
+extern int mkdir_p();
 
 static void openfiles(char* given_filename, char* output_dir) {
   char  output_filename [NRN_BUFSIZE];
@@ -94,9 +95,13 @@ static void openfiles(char* given_filename, char* output_dir) {
       diag("Can't open input file: ", input_filename);
     }
   }
-  if (output_dir[0] != '\0') {
+  if (output_dir) {
+      if(mkdir_p(output_dir) != 0) {
+        fprintf(stderr, "Can't create output directory %s\n", output_dir);
+        exit(1);
+      }
       char* basename = strrchr(modprefix,'/');
-      Sprintf(output_filename, "%s/%s.c", output_dir, basename);
+      Sprintf(output_filename, "%s%s.c", output_dir, basename);
   }
   else
     Sprintf(output_filename, "%s.c", modprefix);
@@ -107,33 +112,43 @@ static void openfiles(char* given_filename, char* output_dir) {
   Fprintf(stderr, "Translating %s into %s\n", input_filename, output_filename);
 }
 
+static void show_options(char** argv) {
+  fprintf(stderr, "Source to source compiler from NMODL to C\n");
+  fprintf(stderr, "Usage: %s [options] Inputfile\n", argv[0]);
+  fprintf(stderr, "Options:\n");
+  fprintf(stderr, "\t-o | --outdir <OUTPUT_DIRECTORY>    directory where output files will be written\n");
+  fprintf(stderr, "\t-h | --help                         print this message\n");
+  fprintf(stderr, "\t-v | --version                      print version number\n");
+}
+
 int main(int argc, char** argv) {
   int option        = -1;
   int option_index  = 0;
-  char* output_dir = "";
+  char* output_dir = NULL;
+
+  if (argc < 2) {
+    show_options(argv);
+    exit(1);
+  }
+
   while ( (option = getopt_long (argc, argv, ":vho:", long_options, &option_index)) != -1) {
     switch (option) {
       case 'v':
         printf("%s\n", nmodl_version_);
         exit(0);
-      
+
       case 'o':
         output_dir = strdup(optarg);
         break;
-      
+
       case 'h':
-        fprintf(stderr, "%s source to source compiler from NMODL to C files\n", argv[0]);
-        fprintf(stderr, "Usage: %s [options] Inputfile\n", argv[0]);
-        fprintf(stderr, "Options:\n");
-        fprintf(stderr, "\t-o | --outdir <OUTPUT_DIRECTORY>    directory where output files will be written\n");
-        fprintf(stderr, "\t-h | --help                         print this message\n");
-        fprintf(stderr, "\t-v | --version                      print version number\n");
+        show_options(argv);
         exit(0);
-      
+
       case ':':
         fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
         exit (-1);
-      
+
       case '?':
       default:
         fprintf(stderr, "%s: invalid option `-%c' \n", argv[0], optopt);
